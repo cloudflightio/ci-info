@@ -1,0 +1,54 @@
+name: Publish package to the Maven Central Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'the scope of the version'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+      - name: Create Tag
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check reckonTagPush koverReport -Preckon.stage=final -Preckon.scope=${{ inputs.scope }}
+      - name : Retrieve Version
+        run: echo "VERSION_NAME=$(${{github.workspace}}/gradlew -q clfPrintVersion)" >> $GITHUB_OUTPUT
+        id: retrieve_version
+      - name: Publish version to Github
+        run: |
+          echo "# ${{steps.retrieve_version.outputs.VERSION_NAME}}" >> $GITHUB_STEP_SUMMARY
+      - name: Publish package
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishToSonatype closeAndReleaseSonatypeStagingRepository
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: kover-report
+          path: build/reports/kover/html/
