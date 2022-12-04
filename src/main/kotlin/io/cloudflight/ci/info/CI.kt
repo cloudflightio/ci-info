@@ -11,8 +11,7 @@ object CI {
     /**
      * @return the current [CIServer] or `null` if we are not running on a known [CIServer]
      */
-    val server: CIServer? =
-        ciDetector.ciServer
+    val server: CIServer? = ciDetector.ciServer
 
     /**
      * @return `true` is this code is running on a known [CIServer]
