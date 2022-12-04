@@ -37,6 +37,18 @@ class CIDetectorTest {
     }
 
     @Test
+    fun `env can be an array - first value matches`() {
+        val detector = CIDetector(mapOf("NOW_BUILDER" to "true"))
+        assertEquals(CIServer.VERCEL, detector.ciServer)
+    }
+
+    @Test
+    fun `env can be an array - second value matches`() {
+        val detector = CIDetector(mapOf("VERCEL" to "true"))
+        assertEquals(CIServer.VERCEL, detector.ciServer)
+    }
+
+    @Test
     fun `PR can be null`() {
         val detector = CIDetector(mapOf("DSARI" to "true"))
         assertEquals(CIServer.DSARI, detector.ciServer)

@@ -50,9 +50,7 @@ private object PRSerializer : JsonTransformingSerializer<Boolean>(Boolean.serial
                 return JsonPrimitive(env != null && env != element.getValue("ne").jsonPrimitive.content)
             }
             if (element.containsKey("any")) {
-                return JsonPrimitive(element.getValue("any").jsonArray.any {
-                    Vendor.env.containsKey(it.jsonPrimitive.content)
-                })
+                return checkAnyEnv(element)
             }
         }
         return transformEnv(element)
@@ -72,9 +70,19 @@ private fun transformEnv(element: JsonElement): JsonElement {
 
         else -> {
             val obj = element as JsonObject
-            JsonPrimitive(
-                obj.entries.fold(true) { a, b -> a && Vendor.env[b.key] == b.value.jsonPrimitive.content }
-            )
+            if (element.containsKey("any")) {
+                return checkAnyEnv(element)
+            } else {
+                JsonPrimitive(
+                    obj.entries.fold(true) { a, b -> a && Vendor.env[b.key] == b.value.jsonPrimitive.content }
+                )
+            }
         }
     }
+}
+
+private fun checkAnyEnv(element: JsonObject): JsonPrimitive {
+    return JsonPrimitive(element.getValue("any").jsonArray.any {
+        Vendor.env.containsKey(it.jsonPrimitive.content)
+    })
 }
